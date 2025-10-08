@@ -1,0 +1,63 @@
+name: Discord Bot Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      bot_token:
+        description: 'Discord Bot Token'
+        required: true
+        type: string
+      webhook_url:
+        description: 'Discord Webhook URL'
+        required: true
+        type: string
+  push:
+    branches: [ main ]
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest v4
+    
+    steps:
+    - name: Checkout code v4
+      uses: actions/checkout@v4
+      
+    - name: Setup Python v4
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies v4
+      run: |
+        python -m pip install --upgrade pip
+        pip install discord.py aiohttp requests beautifulsoup4 numpy opencv-python pillow pytesseract sounddevice soundfile speechrecognition torch transformers cryptography pycurl selenium undetected-chromedriver cloudscraper psutil socks pyautogui mss
+  
+    - name: Create tokens.enc file v4
+      run: |
+        echo "Creating empty tokens.enc file"
+        touch tokens.enc
+        
+    - name: Run Discord bot v4
+      env:
+        DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      run: |
+        sed -i "s/bot.run(\"MTQyMDMyMzA3OTI1NDU3MzA5Ng.G8O_gs.DIT52FBfH7s9qY4PcgzkFaeueAMYB8_u70H4hA\", bot=False)/bot.run(os.environ['DISCORD_BOT_TOKEN'], bot=False)/" discord_bot.py
+        
+        sed -i "s|https://discord.com/api/webhooks/1420286041117687858/OnmrVVYNzFPnL2qcbR1Gn3rLxLSBjkhSL3z57IRF_MPcvd9CtJYWh7k7Z3FAxHb19jMg|$DISCORD_WEBHOOK_URL|g" discord_bot.py
+        
+        python discord_bot.py
+      if: ${{ github.event_name == 'workflow_dispatch' }}
+      
+    - name: Run with default values v4
+      env:
+        DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      run: |
+        # Replace the hardcoded token in the script with the environment variable
+        sed -i "s/bot.run(\"MTQyMDMyMzA3OTI1NDU3MzA5Ng.G8O_gs.DIT52FBfH7s9qY4PcgzkFaeueAMYB8_u70H4hA\", bot=False)/bot.run(os.environ['DISCORD_BOT_TOKEN'], bot=False)/" discord_bot.py
+        
+        sed -i "s|https://discord.com/api/webhooks/1420286041117687858/OnmrVVYNzFPnL2qcbR1Gn3rLxLSBjkhSL3z57IRF_MPcvd9CtJYWh7k7Z3FAxHb19jMg|$DISCORD_WEBHOOK_URL|g" discord_bot.py
+        
+        python bot.py
+      if: ${{ github.event_name != 'workflow_dispatch' }}
